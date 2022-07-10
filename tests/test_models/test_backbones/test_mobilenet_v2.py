@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import pytest
 import torch
 from torch.nn.modules import GroupNorm
@@ -20,6 +19,7 @@ def test_mobilenetv2_backbone():
     # Test MobileNetV2 with first stage frozen
     frozen_stages = 1
     model = MobileNetV2(frozen_stages=frozen_stages)
+    model.init_weights()
     model.train()
 
     for mod in model.conv1.modules():
@@ -35,12 +35,14 @@ def test_mobilenetv2_backbone():
 
     # Test MobileNetV2 with norm_eval=True
     model = MobileNetV2(norm_eval=True)
+    model.init_weights()
     model.train()
 
     assert check_norm_state(model.modules(), False)
 
     # Test MobileNetV2 forward with widen_factor=1.0
     model = MobileNetV2(widen_factor=1.0, out_indices=range(0, 8))
+    model.init_weights()
     model.train()
 
     assert check_norm_state(model.modules(), True)
@@ -59,6 +61,7 @@ def test_mobilenetv2_backbone():
 
     # Test MobileNetV2 forward with widen_factor=0.5
     model = MobileNetV2(widen_factor=0.5, out_indices=range(0, 7))
+    model.init_weights()
     model.train()
 
     imgs = torch.randn(1, 3, 224, 224)
@@ -74,6 +77,7 @@ def test_mobilenetv2_backbone():
 
     # Test MobileNetV2 forward with widen_factor=2.0
     model = MobileNetV2(widen_factor=2.0, out_indices=range(0, 8))
+    model.init_weights()
     model.train()
 
     imgs = torch.randn(1, 3, 224, 224)
@@ -90,6 +94,7 @@ def test_mobilenetv2_backbone():
     # Test MobileNetV2 forward with dict(type='ReLU')
     model = MobileNetV2(
         widen_factor=1.0, act_cfg=dict(type='ReLU'), out_indices=range(0, 7))
+    model.init_weights()
     model.train()
 
     imgs = torch.randn(1, 3, 224, 224)
@@ -108,6 +113,7 @@ def test_mobilenetv2_backbone():
     for m in model.modules():
         if is_norm(m):
             assert isinstance(m, _BatchNorm)
+    model.init_weights()
     model.train()
 
     imgs = torch.randn(1, 3, 224, 224)
@@ -129,6 +135,7 @@ def test_mobilenetv2_backbone():
     for m in model.modules():
         if is_norm(m):
             assert isinstance(m, GroupNorm)
+    model.init_weights()
     model.train()
 
     imgs = torch.randn(1, 3, 224, 224)
@@ -144,6 +151,7 @@ def test_mobilenetv2_backbone():
 
     # Test MobileNetV2 with layers 1, 3, 5 out forward
     model = MobileNetV2(widen_factor=1.0, out_indices=(0, 2, 4))
+    model.init_weights()
     model.train()
 
     imgs = torch.randn(1, 3, 224, 224)
@@ -159,6 +167,7 @@ def test_mobilenetv2_backbone():
     for m in model.modules():
         if is_block(m):
             assert m.with_cp
+    model.init_weights()
     model.train()
 
     imgs = torch.randn(1, 3, 224, 224)

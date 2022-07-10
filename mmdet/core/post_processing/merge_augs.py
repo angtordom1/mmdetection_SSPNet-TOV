@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import copy
 import warnings
 
@@ -67,7 +66,7 @@ def merge_aug_proposals(aug_proposals, img_metas, cfg):
         _proposals = proposals.clone()
         _proposals[:, :4] = bbox_mapping_back(_proposals[:, :4], img_shape,
                                               scale_factor, flip,
-                                              flip_direction)
+                                              flip_direction, img_info.get('tile_offset', None))
         recovered_proposals.append(_proposals)
     aug_proposals = torch.cat(recovered_proposals, dim=0)
     merged_proposals, _ = nms(aug_proposals[:, :4].contiguous(),
@@ -100,7 +99,7 @@ def merge_aug_bboxes(aug_bboxes, aug_scores, img_metas, rcnn_test_cfg):
         flip = img_info[0]['flip']
         flip_direction = img_info[0]['flip_direction']
         bboxes = bbox_mapping_back(bboxes, img_shape, scale_factor, flip,
-                                   flip_direction)
+                                   flip_direction, img_info[0].get('tile_offset', None))
         recovered_bboxes.append(bboxes)
     bboxes = torch.stack(recovered_bboxes).mean(dim=0)
     if aug_scores is None:
@@ -132,14 +131,11 @@ def merge_aug_masks(aug_masks, img_metas, rcnn_test_cfg, weights=None):
     recovered_masks = []
     for mask, img_info in zip(aug_masks, img_metas):
         flip = img_info[0]['flip']
+        flip_direction = img_info[0]['flip_direction']
         if flip:
-            flip_direction = img_info[0]['flip_direction']
             if flip_direction == 'horizontal':
                 mask = mask[:, :, :, ::-1]
             elif flip_direction == 'vertical':
-                mask = mask[:, :, ::-1, :]
-            elif flip_direction == 'diagonal':
-                mask = mask[:, :, :, ::-1]
                 mask = mask[:, :, ::-1, :]
             else:
                 raise ValueError(

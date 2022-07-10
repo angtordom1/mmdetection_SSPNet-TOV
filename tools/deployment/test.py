@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import argparse
 
 import mmcv
@@ -114,8 +113,14 @@ def main():
             args.model, class_names=dataset.CLASSES, device_id=0)
     elif args.backend == 'tensorrt':
         from mmdet.core.export.model_wrappers import TensorRTDetector
+        output_names = ['dets', 'labels']
+        if len(cfg.evaluation['metric']) == 2:
+            output_names.append('masks')
         model = TensorRTDetector(
-            args.model, class_names=dataset.CLASSES, device_id=0)
+            args.model,
+            class_names=dataset.CLASSES,
+            device_id=0,
+            output_names=output_names)
 
     model = MMDataParallel(model, device_ids=[0])
     outputs = single_gpu_test(model, data_loader, args.show, args.show_dir,

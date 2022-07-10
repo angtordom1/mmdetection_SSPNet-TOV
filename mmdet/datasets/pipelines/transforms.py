@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import copy
 import inspect
 import math
@@ -74,7 +73,8 @@ class Resize:
                  keep_ratio=True,
                  bbox_clip_border=True,
                  backend='cv2',
-                 override=False):
+                 override=False,
+                 scale_factor=None):  # add by hui
         if img_scale is None:
             self.img_scale = None
         else:
@@ -98,6 +98,12 @@ class Resize:
         # TODO: refactor the override option in Resize
         self.override = override
         self.bbox_clip_border = bbox_clip_border
+
+        # add by hui ####################################################
+        self.scale_factor = scale_factor
+        assert img_scale is None or scale_factor is None, \
+            "img_scale and scale_factor cannot be both set."
+        # ###############################################################
 
     @staticmethod
     def random_select(img_scales):
@@ -270,7 +276,7 @@ class Resize:
                     results['scale'],
                     interpolation='nearest',
                     backend=self.backend)
-            results[key] = gt_seg
+            results['gt_semantic_seg'] = gt_seg
 
     def __call__(self, results):
         """Call function to resize images, bounding boxes, masks, semantic
@@ -283,6 +289,15 @@ class Resize:
             dict: Resized results, 'img_shape', 'pad_shape', 'scale_factor', \
                 'keep_ratio' keys are added into result dict.
         """
+        # add by hui ##############################################################
+        if self.scale_factor is not None:
+            assert 'scale_factor' not in results, 'scale_factor have been specified in results'
+            if len(self.scale_factor) == 1:
+                results['scale_factor'] = self.scale_factor[0]
+            else:
+                results['scale_factor'] = self.random_select(self.img_scale)
+        # ##########################################################################
+
         if 'scale' not in results:
             if 'scale_factor' in results:
                 img_shape = results['img'].shape[:2]
@@ -333,18 +348,18 @@ class RandomFlip:
         ``direction``ly flipped with probability of ``flip_ratio`` .
         E.g., ``flip_ratio=0.5``, ``direction='horizontal'``,
         then image will be horizontally flipped with probability of 0.5.
-    - ``flip_ratio`` is float, ``direction`` is list of string: the image will
+    - ``flip_ratio`` is float, ``direction`` is list of string: the image wil
         be ``direction[i]``ly flipped with probability of
         ``flip_ratio/len(direction)``.
         E.g., ``flip_ratio=0.5``, ``direction=['horizontal', 'vertical']``,
         then image will be horizontally flipped with probability of 0.25,
         vertically with probability of 0.25.
     - ``flip_ratio`` is list of float, ``direction`` is list of string:
-        given ``len(flip_ratio) == len(direction)``, the image will
+        given ``len(flip_ratio) == len(direction)``, the image wil
         be ``direction[i]``ly flipped with probability of ``flip_ratio[i]``.
         E.g., ``flip_ratio=[0.3, 0.5]``, ``direction=['horizontal',
         'vertical']``, then image will be horizontally flipped with probability
-        of 0.3, vertically with probability of 0.5.
+         of 0.3, vertically with probability of 0.5
 
     Args:
         flip_ratio (float | list[float], optional): The flipping probability.
@@ -567,7 +582,7 @@ class RandomShift:
 
 @PIPELINES.register_module()
 class Pad:
-    """Pad the image & masks & segmentation map.
+    """Pad the image & mask.
 
     There are two padding modes: (1) pad to a fixed size and (2) pad to the
     minimum size that is divisible by some number.
@@ -576,51 +591,26 @@ class Pad:
     Args:
         size (tuple, optional): Fixed padding size.
         size_divisor (int, optional): The divisor of padded size.
-        pad_to_square (bool): Whether to pad the image into a square.
-            Currently only used for YOLOX. Default: False.
-        pad_val (dict, optional): A dict for padding value, the default
-            value is `dict(img=0, masks=0, seg=255)`.
+        pad_val (float, optional): Padding value, 0 by default.
     """
 
-    def __init__(self,
-                 size=None,
-                 size_divisor=None,
-                 pad_to_square=False,
-                 pad_val=dict(img=0, masks=0, seg=255)):
+    def __init__(self, size=None, size_divisor=None, pad_val=0):
         self.size = size
         self.size_divisor = size_divisor
-        if isinstance(pad_val, float) or isinstance(pad_val, int):
-            warnings.warn(
-                'pad_val of float type is deprecated now, '
-                f'please use pad_val=dict(img={pad_val}, '
-                f'masks={pad_val}, seg=255) instead.', DeprecationWarning)
-            pad_val = dict(img=pad_val, masks=pad_val, seg=255)
-        assert isinstance(pad_val, dict)
         self.pad_val = pad_val
-        self.pad_to_square = pad_to_square
-
-        if pad_to_square:
-            assert size is None and size_divisor is None, \
-                'The size and size_divisor must be None ' \
-                'when pad2square is True'
-        else:
-            assert size is not None or size_divisor is not None, \
-                'only one of size and size_divisor should be valid'
-            assert size is None or size_divisor is None
+        # only one of size and size_divisor should be valid
+        assert size is not None or size_divisor is not None
+        assert size is None or size_divisor is None
 
     def _pad_img(self, results):
         """Pad images according to ``self.size``."""
-        pad_val = self.pad_val.get('img', 0)
         for key in results.get('img_fields', ['img']):
-            if self.pad_to_square:
-                max_size = max(results[key].shape[:2])
-                self.size = (max_size, max_size)
             if self.size is not None:
                 padded_img = mmcv.impad(
-                    results[key], shape=self.size, pad_val=pad_val)
+                    results[key], shape=self.size, pad_val=self.pad_val)
             elif self.size_divisor is not None:
                 padded_img = mmcv.impad_to_multiple(
-                    results[key], self.size_divisor, pad_val=pad_val)
+                    results[key], self.size_divisor, pad_val=self.pad_val)
             results[key] = padded_img
         results['pad_shape'] = padded_img.shape
         results['pad_fixed_size'] = self.size
@@ -629,17 +619,15 @@ class Pad:
     def _pad_masks(self, results):
         """Pad masks according to ``results['pad_shape']``."""
         pad_shape = results['pad_shape'][:2]
-        pad_val = self.pad_val.get('masks', 0)
         for key in results.get('mask_fields', []):
-            results[key] = results[key].pad(pad_shape, pad_val=pad_val)
+            results[key] = results[key].pad(pad_shape, pad_val=self.pad_val)
 
     def _pad_seg(self, results):
         """Pad semantic segmentation map according to
         ``results['pad_shape']``."""
-        pad_val = self.pad_val.get('seg', 255)
         for key in results.get('seg_fields', []):
             results[key] = mmcv.impad(
-                results[key], shape=results['pad_shape'][:2], pad_val=pad_val)
+                results[key], shape=results['pad_shape'][:2])
 
     def __call__(self, results):
         """Call function to pad images, masks, semantic segmentation maps.
@@ -659,7 +647,6 @@ class Pad:
         repr_str = self.__class__.__name__
         repr_str += f'(size={self.size}, '
         repr_str += f'size_divisor={self.size_divisor}, '
-        repr_str += f'pad_to_square={self.pad_to_square}, '
         repr_str += f'pad_val={self.pad_val})'
         return repr_str
 
@@ -726,8 +713,6 @@ class RandomCrop:
             in range [crop_size[0], min(w, crop_size[1])]. Default "absolute".
         allow_negative_crop (bool, optional): Whether to allow a crop that does
             not contain any bbox area. Default False.
-        recompute_bbox (bool, optional): Whether to re-compute the boxes based
-            on cropped instance masks. Default False.
         bbox_clip_border (bool, optional): Whether clip the objects outside
             the border of the image. Defaults to True.
 
@@ -746,7 +731,6 @@ class RandomCrop:
                  crop_size,
                  crop_type='absolute',
                  allow_negative_crop=False,
-                 recompute_bbox=False,
                  bbox_clip_border=True):
         if crop_type not in [
                 'relative_range', 'relative', 'absolute', 'absolute_range'
@@ -762,7 +746,6 @@ class RandomCrop:
         self.crop_type = crop_type
         self.allow_negative_crop = allow_negative_crop
         self.bbox_clip_border = bbox_clip_border
-        self.recompute_bbox = recompute_bbox
         # The key correspondence from bboxes to labels and masks.
         self.bbox2label = {
             'gt_bboxes': 'gt_labels',
@@ -831,8 +814,6 @@ class RandomCrop:
                 results[mask_key] = results[mask_key][
                     valid_inds.nonzero()[0]].crop(
                         np.asarray([crop_x1, crop_y1, crop_x2, crop_y2]))
-                if self.recompute_bbox:
-                    results[key] = results[mask_key].get_bboxes()
 
         # crop semantic seg
         for key in results.get('seg_fields', []):
@@ -979,7 +960,9 @@ class PhotoMetricDistortion:
             assert results['img_fields'] == ['img'], \
                 'Only single img_fields is allowed'
         img = results['img']
-        img = img.astype(np.float32)
+        assert img.dtype == np.float32, \
+            'PhotoMetricDistortion needs the input image of dtype np.float32,'\
+            ' please set "to_float32=True" in "LoadImageFromFile" pipeline'
         # random brightness
         if random.randint(2):
             delta = random.uniform(-self.brightness_delta,

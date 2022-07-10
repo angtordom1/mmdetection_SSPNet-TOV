@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch.nn as nn
 import torch.utils.checkpoint as cp
 from mmcv.cnn import (build_conv_layer, build_norm_layer, constant_init,
@@ -239,18 +238,9 @@ class DetectoRS_ResNet(ResNet):
                  pretrained=None,
                  init_cfg=None,
                  **kwargs):
-        assert not (init_cfg and pretrained), \
-            'init_cfg and pretrained cannot be specified at the same time'
+        assert init_cfg is None, 'To prevent abnormal initialization ' \
+                                 'behavior, init_cfg is not allowed to be set'
         self.pretrained = pretrained
-        if init_cfg is not None:
-            assert isinstance(init_cfg, dict), \
-                f'init_cfg must be a dict, but got {type(init_cfg)}'
-            if 'type' in init_cfg:
-                assert init_cfg.get('type') == 'Pretrained', \
-                    'Only can initialize module by loading a pretrained model'
-            else:
-                raise KeyError('`init_cfg` must contain the key "type"')
-            self.pretrained = init_cfg.get('checkpoint')
         self.sac = sac
         self.stage_with_sac = stage_with_sac
         self.rfp_inplanes = rfp_inplanes

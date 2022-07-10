@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 # Copyright (c) 2019 Western Digital Corporation or its affiliates.
 
 import warnings
@@ -133,9 +132,9 @@ class Darknet(BaseModule):
         self.norm_eval = norm_eval
 
         assert not (init_cfg and pretrained), \
-            'init_cfg and pretrained cannot be specified at the same time'
+            'init_cfg and pretrained cannot be setting at the same time'
         if isinstance(pretrained, str):
-            warnings.warn('DeprecationWarning: pretrained is deprecated, '
+            warnings.warn('DeprecationWarning: pretrained is a deprecated, '
                           'please use "init_cfg" instead')
             self.init_cfg = dict(type='Pretrained', checkpoint=pretrained)
         elif pretrained is None:

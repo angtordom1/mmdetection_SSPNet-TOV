@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 
 from mmdet.core.bbox.assigners import MaxIoUAssigner
@@ -96,7 +95,7 @@ def _context_for_ohem():
     import sys
     from os.path import dirname
     sys.path.insert(0, dirname(dirname(dirname(__file__))))
-    from test_models.test_forward import _get_detector_cfg
+    from test_forward import _get_detector_cfg
 
     model = _get_detector_cfg(
         'faster_rcnn/faster_rcnn_r50_fpn_ohem_1x_coco.py')

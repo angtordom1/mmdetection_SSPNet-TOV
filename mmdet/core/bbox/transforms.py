@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import numpy as np
 import torch
 
@@ -36,11 +35,27 @@ def bbox_mapping(bboxes,
                  img_shape,
                  scale_factor,
                  flip,
-                 flip_direction='horizontal'):
+                 flip_direction,  # ='horizontal',
+                 tile_offset):
     """Map bboxes from the original image scale to testing scale."""
     new_bboxes = bboxes * bboxes.new_tensor(scale_factor)
     if flip:
         new_bboxes = bbox_flip(new_bboxes, img_shape, flip_direction)
+    # add by hui ############################################
+    assert tile_offset is None or (isinstance(tile_offset, (tuple, list)) and len(tile_offset) == 2), \
+        "tile_offset must be None or (dx, dy) or [dx, dy]"
+    if tile_offset is not None:
+        dx, dy = tile_offset
+        new_bboxes[:, [0, 2]] -= dx
+        new_bboxes[:, [1, 3]] -= dy
+
+        h, w, c = img_shape
+        new_bboxes[:, [0, 2]] = new_bboxes[:, [0, 2]].clamp(0, w - 1)
+        new_bboxes[:, [1, 3]] = new_bboxes[:, [1, 3]].clamp(0, h - 1)
+        W, H = new_bboxes[:, 2] - new_bboxes[:, 0], new_bboxes[:, 3] - new_bboxes[:, 1]
+        keep = (W >= 2) & (H >= 2)
+        new_bboxes = new_bboxes[keep]
+    # #################################################################
     return new_bboxes
 
 
@@ -48,11 +63,20 @@ def bbox_mapping_back(bboxes,
                       img_shape,
                       scale_factor,
                       flip,
-                      flip_direction='horizontal'):
+                      flip_direction,  # ='horizontal',
+                      tile_offset: [tuple, list, None]):
     """Map bboxes from testing scale to original image scale."""
     new_bboxes = bbox_flip(bboxes, img_shape,
                            flip_direction) if flip else bboxes
     new_bboxes = new_bboxes.view(-1, 4) / new_bboxes.new_tensor(scale_factor)
+    # add by hui ############################################
+    assert tile_offset is None or (isinstance(tile_offset, (tuple, list)) and len(tile_offset) == 2), \
+        "tile_offset must be None or (dx, dy) or [dx, dy]"
+    if tile_offset is not None:
+        dx, dy = tile_offset
+        new_bboxes[:, [0, 2]] += dx
+        new_bboxes[:, [1, 3]] += dy
+    # #################################################################
     return new_bboxes.view(bboxes.shape)
 
 
@@ -133,7 +157,6 @@ def distance2bbox(points, distance, max_shape=None):
     Returns:
         Tensor: Boxes with shape (N, 4) or (B, N, 4)
     """
-
     x1 = points[..., 0] - distance[..., 0]
     y1 = points[..., 1] - distance[..., 1]
     x2 = points[..., 0] + distance[..., 2]
@@ -142,12 +165,6 @@ def distance2bbox(points, distance, max_shape=None):
     bboxes = torch.stack([x1, y1, x2, y2], -1)
 
     if max_shape is not None:
-        if bboxes.dim() == 2 and not torch.onnx.is_in_onnx_export():
-            # speed up
-            bboxes[:, 0::2].clamp_(min=0, max=max_shape[1])
-            bboxes[:, 1::2].clamp_(min=0, max=max_shape[0])
-            return bboxes
-
         # clip bboxes with dynamic `min` and `max` for onnx
         if torch.onnx.is_in_onnx_export():
             from mmdet.core.export import dynamic_clip_for_onnx

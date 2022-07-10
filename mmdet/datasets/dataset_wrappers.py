@@ -1,7 +1,4 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import bisect
-import collections
-import copy
 import math
 from collections import defaultdict
 
@@ -87,7 +84,7 @@ class ConcatDataset(_ConcatDataset):
         # Check whether all the datasets support evaluation
         for dataset in self.datasets:
             assert hasattr(dataset, 'evaluate'), \
-                f'{type(dataset)} does not implement evaluate function'
+                    f'{type(dataset)} does not implement evaluate function'
 
         if self.separate_eval:
             dataset_idx = -1

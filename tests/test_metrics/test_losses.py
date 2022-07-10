@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import pytest
 import torch
 
@@ -80,7 +79,7 @@ def test_varifocal_loss():
 
 
 def test_kd_loss():
-    # test that temperature should be greater than 1
+    # test that temeprature should be greater than 1
     with pytest.raises(AssertionError):
         loss_cfg = dict(
             type='KnowledgeDistillationKLDivLoss', loss_weight=1.0, T=0.5)
