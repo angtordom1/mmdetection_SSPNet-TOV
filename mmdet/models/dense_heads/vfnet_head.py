@@ -9,7 +9,7 @@ from mmcv.ops import DeformConv2d
 from mmcv.runner import force_fp32
 
 from mmdet.core import (MlvlPointGenerator, bbox_overlaps, build_assigner,
-                        build_prior_generator, build_sampler, multi_apply,
+                        build_anchor_generator, build_sampler, multi_apply,
                         reduce_mean)
 from ..builder import HEADS, build_loss
 from .atss_head import ATSSHead
@@ -154,7 +154,7 @@ class VFNetHead(ATSSHead, FCOSHead):
 
         self.anchor_center_offset = anchor_generator['center_offset']
 
-        self.num_base_priors = self.prior_generator.num_base_priors[0]
+        self.num_base_priors = self.anchor_generator.num_base_priors[0]
 
         self.sampling = False
         if self.train_cfg:
@@ -162,15 +162,15 @@ class VFNetHead(ATSSHead, FCOSHead):
             sampler_cfg = dict(type='PseudoSampler')
             self.sampler = build_sampler(sampler_cfg, context=self)
         # only be used in `get_atss_targets` when `use_atss` is True
-        self.atss_prior_generator = build_prior_generator(anchor_generator)
+        self.atss_anchor_generator = build_anchor_generator(anchor_generator)
 
-        self.fcos_prior_generator = MlvlPointGenerator(
+        self.fcos_anchor_generator = MlvlPointGenerator(
             anchor_generator['strides'],
             self.anchor_center_offset if self.use_atss else 0.5)
 
         # In order to reuse the `get_bboxes` in `BaseDenseHead.
         # Only be used in testing phase.
-        self.prior_generator = self.fcos_prior_generator
+        self.anchor_generator = self.fcos_anchor_generator
 
     @property
     def num_anchors(self):
@@ -185,8 +185,8 @@ class VFNetHead(ATSSHead, FCOSHead):
     @property
     def anchor_generator(self):
         warnings.warn('DeprecationWarning: anchor_generator is deprecated, '
-                      'please use "atss_prior_generator" instead')
-        return self.prior_generator
+                      'please use "atss_anchor_generator" instead')
+        return self.anchor_generator
 
     def _init_layers(self):
         """Initialize layers of the head."""
@@ -382,7 +382,7 @@ class VFNetHead(ATSSHead, FCOSHead):
         """
         assert len(cls_scores) == len(bbox_preds) == len(bbox_preds_refine)
         featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
-        all_level_points = self.fcos_prior_generator.grid_priors(
+        all_level_points = self.fcos_anchor_generator.grid_priors(
             featmap_sizes, bbox_preds[0].dtype, bbox_preds[0].device)
         labels, label_weights, bbox_targets, bbox_weights = self.get_targets(
             cls_scores, all_level_points, gt_bboxes, gt_labels, img_metas,
@@ -582,14 +582,14 @@ class VFNetHead(ATSSHead, FCOSHead):
 
         # since feature map sizes of all images are the same, we only compute
         # anchors for one time
-        multi_level_anchors = self.atss_prior_generator.grid_priors(
+        multi_level_anchors = self.atss_anchor_generator.grid_priors(
             featmap_sizes, device=device)
         anchor_list = [multi_level_anchors for _ in range(num_imgs)]
 
         # for each image, we compute valid flags of multi level anchors
         valid_flag_list = []
         for img_id, img_meta in enumerate(img_metas):
-            multi_level_flags = self.atss_prior_generator.valid_flags(
+            multi_level_flags = self.atss_anchor_generator.valid_flags(
                 featmap_sizes, img_meta['pad_shape'], device=device)
             valid_flag_list.append(multi_level_flags)
 
@@ -629,8 +629,8 @@ class VFNetHead(ATSSHead, FCOSHead):
         featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
         assert len(
             featmap_sizes
-        ) == self.atss_prior_generator.num_levels == \
-            self.fcos_prior_generator.num_levels
+        ) == self.atss_anchor_generator.num_levels == \
+            self.fcos_anchor_generator.num_levels
 
         device = cls_scores[0].device
 
@@ -721,7 +721,7 @@ class VFNetHead(ATSSHead, FCOSHead):
             '`_get_points_single` in `VFNetHead` will be '
             'deprecated soon, we support a multi level point generator now'
             'you can get points of a single level feature map'
-            'with `self.fcos_prior_generator.single_level_grid_priors` ')
+            'with `self.fcos_anchor_generator.single_level_grid_priors` ')
 
         h, w = featmap_size
         x_range = torch.arange(

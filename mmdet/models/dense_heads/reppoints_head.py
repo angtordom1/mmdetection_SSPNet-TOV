@@ -95,7 +95,7 @@ class RepPointsHead(AnchorFreeHead):
         self.gradient_mul = gradient_mul
         self.point_base_scale = point_base_scale
         self.point_strides = point_strides
-        self.prior_generator = MlvlPointGenerator(
+        self.anchor_generator = MlvlPointGenerator(
             self.point_strides, offset=0.)
 
         self.sampling = loss_cls['type'] not in ['FocalLoss']
@@ -315,7 +315,7 @@ class RepPointsHead(AnchorFreeHead):
 
         # since feature map sizes of all images are the same, we only compute
         # points center for one time
-        multi_level_points = self.prior_generator.grid_priors(
+        multi_level_points = self.anchor_generator.grid_priors(
             featmap_sizes, device=device, with_stride=True)
         points_list = [[point.clone() for point in multi_level_points]
                        for _ in range(num_imgs)]
@@ -323,7 +323,7 @@ class RepPointsHead(AnchorFreeHead):
         # for each image, we compute valid flags of multi level grids
         valid_flag_list = []
         for img_id, img_meta in enumerate(img_metas):
-            multi_level_flags = self.prior_generator.valid_flags(
+            multi_level_flags = self.anchor_generator.valid_flags(
                 featmap_sizes, img_meta['pad_shape'])
             valid_flag_list.append(multi_level_flags)
 

@@ -6,7 +6,7 @@ import torch.nn as nn
 from mmcv.runner import force_fp32
 
 from mmdet.core import (anchor_inside_flags, build_assigner, build_bbox_coder,
-                        build_prior_generator, build_sampler, images_to_levels,
+                        build_anchor_generator, build_sampler, images_to_levels,
                         multi_apply, unmap)
 from ..builder import HEADS, build_loss
 from .base_dense_head import BaseDenseHead
@@ -103,12 +103,12 @@ class AnchorHead(BaseDenseHead, BBoxTestMixin):
             self.sampler = build_sampler(sampler_cfg, context=self)
         self.fp16_enabled = False
 
-        self.prior_generator = build_prior_generator(anchor_generator)
+        self.anchor_generator = build_anchor_generator(anchor_generator)
 
         # Usually the numbers of anchors for each level are the same
         # except SSD detectors. So it is an int in the most dense
         # heads but a list of int in SSDHead
-        self.num_base_priors = self.prior_generator.num_base_priors[0]
+        self.num_base_priors = self.anchor_generator.num_base_priors[0]
         self._init_layers()
 
     @property
@@ -116,13 +116,13 @@ class AnchorHead(BaseDenseHead, BBoxTestMixin):
         warnings.warn('DeprecationWarning: `num_anchors` is deprecated, '
                       'for consistency or also use '
                       '`num_base_priors` instead')
-        return self.prior_generator.num_base_priors[0]
+        return self.anchor_generator.num_base_priors[0]
 
     @property
     def anchor_generator(self):
         warnings.warn('DeprecationWarning: anchor_generator is deprecated, '
-                      'please use "prior_generator" instead')
-        return self.prior_generator
+                      'please use "anchor_generator" instead')
+        return self.anchor_generator
 
     def _init_layers(self):
         """Initialize layers of the head."""
@@ -185,14 +185,14 @@ class AnchorHead(BaseDenseHead, BBoxTestMixin):
 
         # since feature map sizes of all images are the same, we only compute
         # anchors for one time
-        multi_level_anchors = self.prior_generator.grid_priors(
+        multi_level_anchors = self.anchor_generator.grid_priors(
             featmap_sizes, device=device)
         anchor_list = [multi_level_anchors for _ in range(num_imgs)]
 
         # for each image, we compute valid flags of multi level anchors
         valid_flag_list = []
         for img_id, img_meta in enumerate(img_metas):
-            multi_level_flags = self.prior_generator.valid_flags(
+            multi_level_flags = self.anchor_generator.valid_flags(
                 featmap_sizes, img_meta['pad_shape'], device)
             valid_flag_list.append(multi_level_flags)
 
@@ -476,7 +476,7 @@ class AnchorHead(BaseDenseHead, BBoxTestMixin):
             dict[str, Tensor]: A dictionary of loss components.
         """
         featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
-        assert len(featmap_sizes) == self.prior_generator.num_levels
+        assert len(featmap_sizes) == self.anchor_generator.num_levels
 
         device = cls_scores[0].device
 

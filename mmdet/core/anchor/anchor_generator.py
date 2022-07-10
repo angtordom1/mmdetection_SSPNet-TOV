@@ -6,10 +6,10 @@ import numpy as np
 import torch
 from torch.nn.modules.utils import _pair
 
-from .builder import PRIOR_GENERATORS
+from .builder import ANCHOR_GENERATORS
 
 
-@PRIOR_GENERATORS.register_module()
+@ANCHOR_GENERATORS.register_module()
 class AnchorGenerator:
     """Standard anchor generator for 2D anchor-based detectors.
 

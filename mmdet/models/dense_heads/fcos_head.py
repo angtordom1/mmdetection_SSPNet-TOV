@@ -195,7 +195,7 @@ class FCOSHead(AnchorFreeHead):
         """
         assert len(cls_scores) == len(bbox_preds) == len(centernesses)
         featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
-        all_level_points = self.prior_generator.grid_priors(
+        all_level_points = self.anchor_generator.grid_priors(
             featmap_sizes,
             dtype=bbox_preds[0].dtype,
             device=bbox_preds[0].device)
@@ -445,7 +445,7 @@ class FCOSHead(AnchorFreeHead):
             '`_get_points_single` in `FCOSHead` will be '
             'deprecated soon, we support a multi level point generator now'
             'you can get points of a single level feature map '
-            'with `self.prior_generator.single_level_grid_priors` ')
+            'with `self.anchor_generator.single_level_grid_priors` ')
 
         y, x = super()._get_points_single(featmap_size, stride, dtype, device)
         points = torch.stack((x.reshape(-1) * stride, y.reshape(-1) * stride),

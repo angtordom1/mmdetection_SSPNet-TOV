@@ -8,7 +8,7 @@ from mmcv.cnn import ConvModule, DepthwiseSeparableConvModule
 from mmcv.runner import force_fp32
 
 from mmdet.core import (build_assigner, build_bbox_coder,
-                        build_prior_generator, build_sampler, multi_apply)
+                        build_anchor_generator, build_sampler, multi_apply)
 from ..builder import HEADS
 from ..losses import smooth_l1_loss
 from .anchor_head import AnchorHead
@@ -88,12 +88,12 @@ class SSDHead(AnchorHead):
         self.act_cfg = act_cfg
 
         self.cls_out_channels = num_classes + 1  # add background class
-        self.prior_generator = build_prior_generator(anchor_generator)
+        self.anchor_generator = build_anchor_generator(anchor_generator)
 
         # Usually the numbers of anchors for each level are the same
         # except SSD detectors. So it is an int in the most dense
         # heads but a list of int in SSDHead
-        self.num_base_priors = self.prior_generator.num_base_priors
+        self.num_base_priors = self.anchor_generator.num_base_priors
 
         self._init_layers()
 
@@ -302,7 +302,7 @@ class SSDHead(AnchorHead):
             dict[str, Tensor]: A dictionary of loss components.
         """
         featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
-        assert len(featmap_sizes) == self.prior_generator.num_levels
+        assert len(featmap_sizes) == self.anchor_generator.num_levels
 
         device = cls_scores[0].device
 

@@ -156,7 +156,7 @@ class GFLHead(AnchorHead):
         self.gfl_reg = nn.Conv2d(
             self.feat_channels, 4 * (self.reg_max + 1), 3, padding=1)
         self.scales = nn.ModuleList(
-            [Scale(1.0) for _ in self.prior_generator.strides])
+            [Scale(1.0) for _ in self.anchor_generator.strides])
 
     def forward(self, feats):
         """Forward features from the upstream network.
@@ -332,7 +332,7 @@ class GFLHead(AnchorHead):
         """
 
         featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
-        assert len(featmap_sizes) == self.prior_generator.num_levels
+        assert len(featmap_sizes) == self.anchor_generator.num_levels
 
         device = cls_scores[0].device
         anchor_list, valid_flag_list = self.get_anchors(
@@ -367,7 +367,7 @@ class GFLHead(AnchorHead):
                 labels_list,
                 label_weights_list,
                 bbox_targets_list,
-                self.prior_generator.strides,
+                self.anchor_generator.strides,
                 num_total_samples=num_total_samples)
 
         avg_factor = sum(avg_factor)
@@ -432,7 +432,7 @@ class GFLHead(AnchorHead):
         mlvl_labels = []
         for level_idx, (cls_score, bbox_pred, stride, priors) in enumerate(
                 zip(cls_score_list, bbox_pred_list,
-                    self.prior_generator.strides, mlvl_priors)):
+                    self.anchor_generator.strides, mlvl_priors)):
             assert cls_score.size()[-2:] == bbox_pred.size()[-2:]
             assert stride[0] == stride[1]
 

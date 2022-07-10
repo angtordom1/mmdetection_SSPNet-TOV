@@ -10,11 +10,11 @@ import torch
 
 
 def test_standard_points_generator():
-    from mmdet.core.anchor import build_prior_generator
+    from mmdet.core.anchor import build_anchor_generator
     # teat init
     anchor_generator_cfg = dict(
         type='MlvlPointGenerator', strides=[4, 8], offset=0)
-    anchor_generator = build_prior_generator(anchor_generator_cfg)
+    anchor_generator = build_anchor_generator(anchor_generator_cfg)
     assert anchor_generator is not None
     assert anchor_generator.num_base_priors == [1, 1]
     # test_stride
@@ -61,7 +61,7 @@ def test_standard_points_generator():
     if torch.cuda.is_available():
         anchor_generator_cfg = dict(
             type='MlvlPointGenerator', strides=[4, 8], offset=0)
-        anchor_generator = build_prior_generator(anchor_generator_cfg)
+        anchor_generator = build_anchor_generator(anchor_generator_cfg)
         assert anchor_generator is not None
         # Square strides
         mlvl_points = MlvlPointGenerator(strides=[4, 10], offset=0)

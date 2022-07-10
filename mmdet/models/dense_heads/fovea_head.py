@@ -141,7 +141,7 @@ class FoveaHead(AnchorFreeHead):
         assert len(cls_scores) == len(bbox_preds)
 
         featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
-        points = self.prior_generator.grid_priors(
+        points = self.anchor_generator.grid_priors(
             featmap_sizes,
             dtype=bbox_preds[0].dtype,
             device=bbox_preds[0].device)
@@ -380,6 +380,6 @@ class FoveaHead(AnchorFreeHead):
             '`_get_points_single` in `FoveaHead` will be '
             'deprecated soon, we support a multi level point generator now'
             'you can get points of a single level feature map '
-            'with `self.prior_generator.single_level_grid_priors` ')
+            'with `self.anchor_generator.single_level_grid_priors` ')
         y, x = super()._get_points_single(*args, **kwargs)
         return y + 0.5, x + 0.5

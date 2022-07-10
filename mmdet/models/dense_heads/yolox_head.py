@@ -112,7 +112,7 @@ class YOLOXHead(BaseDenseHead, BBoxTestMixin):
         self.use_l1 = False  # This flag will be modified by hooks.
         self.loss_l1 = build_loss(loss_l1)
 
-        self.prior_generator = MlvlPointGenerator(strides, offset=0)
+        self.anchor_generator = MlvlPointGenerator(strides, offset=0)
 
         self.test_cfg = test_cfg
         self.train_cfg = train_cfg
@@ -252,7 +252,7 @@ class YOLOXHead(BaseDenseHead, BBoxTestMixin):
 
         num_imgs = len(img_metas)
         featmap_sizes = [cls_score.shape[2:] for cls_score in cls_scores]
-        mlvl_priors = self.prior_generator.grid_priors(
+        mlvl_priors = self.anchor_generator.grid_priors(
             featmap_sizes,
             dtype=cls_scores[0].dtype,
             device=cls_scores[0].device,
@@ -351,7 +351,7 @@ class YOLOXHead(BaseDenseHead, BBoxTestMixin):
         """
         num_imgs = len(img_metas)
         featmap_sizes = [cls_score.shape[2:] for cls_score in cls_scores]
-        mlvl_priors = self.prior_generator.grid_priors(
+        mlvl_priors = self.anchor_generator.grid_priors(
             featmap_sizes,
             dtype=cls_scores[0].dtype,
             device=cls_scores[0].device,

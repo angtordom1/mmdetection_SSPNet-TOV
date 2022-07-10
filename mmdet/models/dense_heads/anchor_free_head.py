@@ -90,11 +90,11 @@ class AnchorFreeHead(BaseDenseHead, BBoxTestMixin):
         self.loss_bbox = build_loss(loss_bbox)
         self.bbox_coder = build_bbox_coder(bbox_coder)
 
-        self.prior_generator = MlvlPointGenerator(strides)
+        self.anchor_generator = MlvlPointGenerator(strides)
 
         # In order to keep a more general interface and be consistent with
         # anchor_head. We can think of point like one anchor
-        self.num_base_priors = self.prior_generator.num_base_priors[0]
+        self.num_base_priors = self.anchor_generator.num_base_priors[0]
 
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
@@ -318,7 +318,7 @@ class AnchorFreeHead(BaseDenseHead, BBoxTestMixin):
             '`_get_points_single` in `AnchorFreeHead` will be '
             'deprecated soon, we support a multi level point generator now'
             'you can get points of a single level feature map '
-            'with `self.prior_generator.single_level_grid_priors` ')
+            'with `self.anchor_generator.single_level_grid_priors` ')
 
         h, w = featmap_size
         # First create Range with the default dtype, than convert to
@@ -346,7 +346,7 @@ class AnchorFreeHead(BaseDenseHead, BBoxTestMixin):
             '`get_points` in `AnchorFreeHead` will be '
             'deprecated soon, we support a multi level point generator now'
             'you can get points of all levels '
-            'with `self.prior_generator.grid_priors` ')
+            'with `self.anchor_generator.grid_priors` ')
 
         mlvl_points = []
         for i in range(len(featmap_sizes)):

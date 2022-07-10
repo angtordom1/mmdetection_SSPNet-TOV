@@ -140,7 +140,7 @@ def test_retina_head_forward():
     feats = [
         torch.rand(1, retina_model.in_channels, s // (2**(i + 2)),
                    s // (2**(i + 2)))  # [32, 16, 8, 4, 2]
-        for i in range(len(retina_model.prior_generator.strides))
+        for i in range(len(retina_model.anchor_generator.strides))
     ]
     ort_validate(retina_model.forward, feats)
 

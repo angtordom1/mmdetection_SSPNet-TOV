@@ -162,7 +162,7 @@ class AutoAssignHead(FCOSHead):
         self.pos_loss_weight = pos_loss_weight
         self.neg_loss_weight = neg_loss_weight
         self.center_loss_weight = center_loss_weight
-        self.prior_generator = MlvlPointGenerator(self.strides, offset=0)
+        self.anchor_generator = MlvlPointGenerator(self.strides, offset=0)
 
     def init_weights(self):
         """Initialize weights of the head.
@@ -335,7 +335,7 @@ class AutoAssignHead(FCOSHead):
         assert len(cls_scores) == len(bbox_preds) == len(objectnesses)
         all_num_gt = sum([len(item) for item in gt_bboxes])
         featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
-        all_level_points = self.prior_generator.grid_priors(
+        all_level_points = self.anchor_generator.grid_priors(
             featmap_sizes,
             dtype=bbox_preds[0].dtype,
             device=bbox_preds[0].device)
@@ -515,7 +515,7 @@ class AutoAssignHead(FCOSHead):
             '`_get_points_single` in `AutoAssignHead` will be '
             'deprecated soon, we support a multi level point generator now'
             'you can get points of a single level feature map '
-            'with `self.prior_generator.single_level_grid_priors` ')
+            'with `self.anchor_generator.single_level_grid_priors` ')
         y, x = super(FCOSHead,
                      self)._get_points_single(featmap_size, stride, dtype,
                                               device)
