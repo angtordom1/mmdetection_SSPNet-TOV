@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import functools
 import pickle
 import warnings
@@ -70,6 +71,7 @@ def reduce_mean(tensor):
     tensor = tensor.clone()
     dist.all_reduce(tensor.div_(dist.get_world_size()), op=dist.ReduceOp.SUM)
     return tensor
+
 
 def obj2tensor(pyobj, device='cuda'):
     """Serialize picklable python object to tensor."""

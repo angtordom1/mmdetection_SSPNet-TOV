@@ -1,12 +1,15 @@
+# Copyright (c) OpenMMLab. All rights reserved.
+import warnings
+
 import mmcv
 import numpy as np
 import torch
 from torch.nn.modules.utils import _pair
 
-from .builder import ANCHOR_GENERATORS
+from .builder import PRIOR_GENERATORS
 
 
-@ANCHOR_GENERATORS.register_module()
+@PRIOR_GENERATORS.register_module()
 class AnchorGenerator:
     """Standard anchor generator for 2D anchor-based detectors.
 

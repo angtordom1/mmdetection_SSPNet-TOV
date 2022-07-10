@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from functools import partial
 
 import numpy as np
@@ -82,6 +83,7 @@ def flip_tensor(src_tensor, flip_direction):
     else:
         out_tensor = torch.flip(src_tensor, [2, 3])
     return out_tensor
+
 
 def select_single_mlvl(mlvl_tensors, batch_id, detach=True):
     """Extract a multi-scale single image tensor from a multi-scale batch
