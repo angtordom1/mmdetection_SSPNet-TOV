@@ -1,8 +1,11 @@
+import functools
+import pickle
 import warnings
 from collections import OrderedDict
 
+import torch
 import torch.distributed as dist
-from mmcv.runner import OptimizerHook
+from mmcv.runner import OptimizerHook, get_dist_info
 from torch._utils import (_flatten_dense_tensors, _take_tensors,
                           _unflatten_dense_tensors)
 
