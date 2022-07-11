@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import functools
 import pickle
 import warnings
@@ -150,4 +151,3 @@ def all_reduce_dict(py_dict, op='sum', group=None, to_float=True):
     if isinstance(py_dict, OrderedDict):
         out_dict = OrderedDict(out_dict)
     return out_dict
-

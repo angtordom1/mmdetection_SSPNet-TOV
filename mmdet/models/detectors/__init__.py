@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from .atss import ATSS
 from .autoassign import AutoAssign
 from .base import BaseDetector
@@ -15,16 +16,21 @@ from .gfl import GFL
 from .grid_rcnn import GridRCNN
 from .htc import HybridTaskCascade
 from .kd_one_stage import KnowledgeDistillationSingleStageDetector
+from .lad import LAD
 from .mask_rcnn import MaskRCNN
 from .mask_scoring_rcnn import MaskScoringRCNN
 from .nasfcos import NASFCOS
 from .paa import PAA
+from .panoptic_fpn import PanopticFPN
+from .panoptic_two_stage_segmentor import TwoStagePanopticSegmentor
 from .point_rend import PointRend
+from .queryinst import QueryInst
 from .reppoints_detector import RepPointsDetector
 from .retinanet import RetinaNet
 from .rpn import RPN
 from .scnet import SCNet
 from .single_stage import SingleStageDetector
+from .solo import SOLO
 from .sparse_rcnn import SparseRCNN
 from .trident_faster_rcnn import TridentFasterRCNN
 from .two_stage import TwoStageDetector
@@ -32,7 +38,9 @@ from .vfnet import VFNet
 from .yolact import YOLACT
 from .yolo import YOLOV3
 from .yolof import YOLOF
+from .yolox import YOLOX
 from .faster_rcnn_ssp import FasterSSPNet
+from .fovea_sppnet import FOVEA_SPPNet
 
 __all__ = [
     'ATSS', 'BaseDetector', 'SingleStageDetector', 'TwoStageDetector', 'RPN',
@@ -40,6 +48,7 @@ __all__ = [
     'MaskRCNN', 'CascadeRCNN', 'HybridTaskCascade', 'RetinaNet', 'FCOS',
     'GridRCNN', 'MaskScoringRCNN', 'RepPointsDetector', 'FOVEA', 'FSAF',
     'NASFCOS', 'PointRend', 'GFL', 'CornerNet', 'PAA', 'YOLOV3', 'YOLACT',
-    'VFNet', 'DETR', 'TridentFasterRCNN', 'SparseRCNN', 'SCNet',
-    'DeformableDETR', 'AutoAssign', 'YOLOF', 'CenterNet', 'FasterSSPNet'
+    'VFNet', 'DETR', 'TridentFasterRCNN', 'SparseRCNN', 'SCNet', 'SOLO',
+    'DeformableDETR', 'AutoAssign', 'YOLOF', 'CenterNet', 'YOLOX',
+    'TwoStagePanopticSegmentor', 'PanopticFPN', 'QueryInst', 'LAD', 'FasterSSPNet','FOVEA_SPPNet'
 ]
