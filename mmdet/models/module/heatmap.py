@@ -8,7 +8,6 @@ class Heatmap:
     def __init__(self, fpn_lvl=4,
                  loss_att=dict(
                      type='CrossEntropyLoss',
-                     bce_use_sigmoid=True,
                      loss_weight=1.0)):
         self.nb_downsample = 2  # is related to the downsample times in backbone
         self.fpn_lvl = fpn_lvl
