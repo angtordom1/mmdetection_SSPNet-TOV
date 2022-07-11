@@ -25,18 +25,13 @@ class EvalHook(BaseEvalHook):
     # add by hui ##########################################################
     def __init__(self, *args, **eval_kwargs):
         self.do_final_eval = eval_kwargs.pop('do_final_eval', False)
-        self.run_over = False
         super(EvalHook, self).__init__(*args, **eval_kwargs)
 
     def _should_evaluate(self, runner):
-        if self.run_over:
-            return True
         return super(EvalHook, self)._should_evaluate(runner)
 
-    def after_run(self, runner):
-        if self.do_final_eval:
-            self.run_over = True
     #########################################################################
+
     def __init__(self, *args, dynamic_intervals=None, **kwargs):
         super(EvalHook, self).__init__(*args, **kwargs)
 
@@ -81,19 +76,12 @@ class DistEvalHook(BaseDistEvalHook):
     # add by hui ##########################################################
     def __init__(self, *args, **eval_kwargs):
         self.do_final_eval = eval_kwargs.pop('do_final_eval', False)
-        self.run_over = False
         super(DistEvalHook, self).__init__(*args, **eval_kwargs)
 
     def _should_evaluate(self, runner):
-        if self.run_over:
-            return True
         return super(DistEvalHook, self)._should_evaluate(runner)
-
-    def after_run(self, runner):
-        if self.do_final_eval:
-            self.run_over = True
     #########################################################################
-
+    
     def __init__(self, *args, dynamic_intervals=None, **kwargs):
         super(DistEvalHook, self).__init__(*args, **kwargs)
 
