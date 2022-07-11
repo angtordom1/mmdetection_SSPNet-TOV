@@ -1,3 +1,5 @@
+import functools
+import pickle
 import warnings
 from collections import OrderedDict
 
