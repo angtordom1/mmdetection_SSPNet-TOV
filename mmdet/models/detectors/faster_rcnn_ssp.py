@@ -35,17 +35,17 @@ class TwoStageDetector(BaseDetector):
             self.neck = build_neck(neck)
 
         if rpn_head is not None:
-            rpn_train_cfg = train_cfg.rpn if train_cfg is not None else None
+            rpn_train_cfg = train_cfg['rpn'] if train_cfg is not None else None
             rpn_head_ = rpn_head.copy()
-            rpn_head_.update(train_cfg=rpn_train_cfg, test_cfg=test_cfg.rpn)
+            rpn_head_.update(train_cfg=rpn_train_cfg, test_cfg=test_cfg['rpn'])
             self.rpn_head = build_head(rpn_head_)
 
         if roi_head is not None:
             # update train and test cfg here for now
             # TODO: refactor assigner & sampler
-            rcnn_train_cfg = train_cfg.rcnn if train_cfg is not None else None
+            rcnn_train_cfg = train_cfg['rcnn'] if train_cfg is not None else None
             roi_head.update(train_cfg=rcnn_train_cfg)
-            roi_head.update(test_cfg=test_cfg.rcnn)
+            roi_head.update(test_cfg=test_cfg['rcnn'])
             roi_head.pretrained = pretrained
             self.roi_head = build_head(roi_head)
 
@@ -140,7 +140,7 @@ class TwoStageDetector(BaseDetector):
         # RPN forward and loss
         if self.with_rpn:
             proposal_cfg = self.train_cfg.get('rpn_proposal',
-                                              self.test_cfg.rpn)
+                                              self.test_cfg['rpn'])
             rpn_losses, proposal_list = self.rpn_head.forward_train(
                 x,
                 img_metas,

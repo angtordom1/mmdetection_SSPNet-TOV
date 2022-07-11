@@ -197,7 +197,7 @@ class BBoxTestMixin(object):
             flip_direction = img_info[0]['flip_direction']
             assert len(img_info) == 1  # add by hui
             bboxes = bbox_mapping_back(bboxes, img_shape, scale_factor, flip, flip_direction,
-                                       img_info[0].get('tile_offset', None)  # add by hui
+                                       img_info[0].get('tile_offset', None))  # add by hui
             # bboxes = bbox_mapping_back(bboxes, img_shape, scale_factor, flip,
             #                           flip_direction)
             recovered_bboxes.append(bboxes)
