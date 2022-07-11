@@ -1,3 +1,4 @@
+# model settings
 model = dict(
     type='FasterSSPNet',
     pretrained='torchvision://resnet50',
@@ -52,6 +53,7 @@ model = dict(
             loss_cls=dict(
                 type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
             loss_bbox=dict(type='L1Loss', loss_weight=1.0))),
+    # model training and testing settings
     train_cfg = dict(
         rpn=dict(
             assigner=dict(
@@ -91,7 +93,7 @@ model = dict(
                 add_gt_as_proposals=True),
             pos_weight=-1,
             debug=False)),
-    test_cfg = dict(
+    test_cfg=dict(
         rpn=dict(
             nms_across_levels=False,
             nms_pre=1000,
@@ -100,7 +102,8 @@ model = dict(
             min_bbox_size=0),
         rcnn=dict(
             score_thr=0.05,
-            nms=dict(type='soft_nms', iou_threshold=0.3, min_score=0.05),
+            nms=dict(type='nms', iou_threshold=0.3, min_score=0.05),
             max_per_img=500)
-    )
-)
+        # soft-nms is also supported for rcnn testing
+        # e.g., nms=dict(type='soft_nms', iou_threshold=0.5, min_score=0.05)
+    ))

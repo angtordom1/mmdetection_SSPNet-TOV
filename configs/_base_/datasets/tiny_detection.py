@@ -88,27 +88,31 @@ test_pipeline = [
 
 
 data = dict(
-    samples_per_gpu=1,
-    workers_per_gpu=1,
+    samples_per_gpu=2,
+    workers_per_gpu=2,
     train=dict(
-        type=dataset_type,
-        ann_file=data_root + 'mini_annotations/tiny_set_train_sw640_sh512_all_erase.json',
-        img_prefix=data_root + 'erase_with_uncertain_dataset/train/',
-        pipeline=train_pipeline),
+            type=dataset_type,
+            # ann_file=data_root + 'erase_with_uncertain_dataset/annotations/corner/task/tiny_set_train_sw640_sh512_all.json',
+            ann_file=data_root + 'mini_annotations/tiny_set_train_sw640_sh512_all_erase.json',  # same as last line
+            img_prefix=data_root + 'erase_with_uncertain_dataset/train/',
+            pipeline=train_pipeline,
+            # train_ignore_as_bg=False,
+    ),
     val=dict(
         type=dataset_type,
+        #ann_file=data_root + 'mini_annotations/tiny_set_test_all.json',
         ann_file=data_root + 'annotations/corner/task/tiny_set_test_sw640_sh512_all.json',
-        img_prefix=data_root + 'test/',
         merge_after_infer_kwargs=dict(
-            merge_gt_file=data_root + 'annotations/corner/task/tiny_set_test_sw640_sh512_all.json',
+            merge_gt_file=data_root + 'mini_annotations/tiny_set_test_all.json',
             merge_nms_th=0.5
         ),
+        img_prefix=data_root + 'test/',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
         ann_file=data_root + 'annotations/corner/task/tiny_set_test_sw640_sh512_all.json',
         merge_after_infer_kwargs=dict(
-            merge_gt_file=data_root + 'annotations/corner/task/tiny_set_test_sw640_sh512_all.json',
+            merge_gt_file=data_root + 'mini_annotations/tiny_set_test_all.json',
             merge_nms_th=0.5
         ),
         img_prefix=data_root + 'test/',
@@ -117,7 +121,6 @@ data = dict(
 
 check = dict(stop_while_nan=True)
 
-# tiny bbox eval with IOD
 evaluation = dict(
     interval=3, metric='bbox',
     iou_thrs=[0.25, 0.5, 0.75],  # set None mean use 0.5:1.0::0.05

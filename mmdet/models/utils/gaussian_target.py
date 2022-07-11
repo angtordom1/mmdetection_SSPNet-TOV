@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from math import sqrt
 
 import torch
@@ -188,7 +187,7 @@ def gaussian_radius(det_size, min_overlap):
 
 
 def get_local_maximum(heat, kernel=3):
-    """Extract local maximum pixel with given kernel.
+    """Extract local maximum pixel with given kernal.
 
     Args:
         heat (Tensor): Target heatmap.

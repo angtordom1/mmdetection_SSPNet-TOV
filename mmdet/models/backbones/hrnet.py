@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import warnings
 
 import torch.nn as nn
@@ -273,16 +272,15 @@ class HRNet(BaseModule):
                  norm_eval=True,
                  with_cp=False,
                  zero_init_residual=False,
-                 multiscale_output=True,
                  pretrained=None,
                  init_cfg=None):
         super(HRNet, self).__init__(init_cfg)
 
         self.pretrained = pretrained
         assert not (init_cfg and pretrained), \
-            'init_cfg and pretrained cannot be specified at the same time'
+            'init_cfg and pretrained cannot be setting at the same time'
         if isinstance(pretrained, str):
-            warnings.warn('DeprecationWarning: pretrained is deprecated, '
+            warnings.warn('DeprecationWarning: pretrained is a deprecated, '
                           'please use "init_cfg" instead')
             self.init_cfg = dict(type='Pretrained', checkpoint=pretrained)
         elif pretrained is None:
@@ -296,16 +294,6 @@ class HRNet(BaseModule):
                 ]
         else:
             raise TypeError('pretrained must be a str or None')
-
-        # Assert configurations of 4 stages are in extra
-        assert 'stage1' in extra and 'stage2' in extra \
-               and 'stage3' in extra and 'stage4' in extra
-        # Assert whether the length of `num_blocks` and `num_channels` are
-        # equal to `num_branches`
-        for i in range(4):
-            cfg = extra[f'stage{i + 1}']
-            assert len(cfg['num_blocks']) == cfg['num_branches'] and \
-                   len(cfg['num_channels']) == cfg['num_branches']
 
         self.extra = extra
         self.conv_cfg = conv_cfg
@@ -384,7 +372,7 @@ class HRNet(BaseModule):
         self.transition3 = self._make_transition_layer(pre_stage_channels,
                                                        num_channels)
         self.stage4, pre_stage_channels = self._make_stage(
-            self.stage4_cfg, num_channels, multiscale_output=multiscale_output)
+            self.stage4_cfg, num_channels)
 
     @property
     def norm1(self):

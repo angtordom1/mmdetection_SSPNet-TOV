@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from collections import OrderedDict
 
 from mmcv.utils import print_log

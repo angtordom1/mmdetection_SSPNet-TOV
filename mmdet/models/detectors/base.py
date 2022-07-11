@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 
@@ -178,7 +177,7 @@ class BaseDetector(BaseModule, metaclass=ABCMeta):
 
         Args:
             losses (dict): Raw output of the network, which usually contain
-                losses and other necessary information.
+                losses and other necessary infomation.
 
         Returns:
             tuple[Tensor, dict]: (loss, log_vars), loss is the loss tensor \
@@ -197,16 +196,6 @@ class BaseDetector(BaseModule, metaclass=ABCMeta):
 
         loss = sum(_value for _key, _value in log_vars.items()
                    if 'loss' in _key)
-
-        # If the loss_vars has different length, GPUs will wait infinitely
-        if dist.is_available() and dist.is_initialized():
-            log_var_length = torch.tensor(len(log_vars), device=loss.device)
-            dist.all_reduce(log_var_length)
-            message = (f'rank {dist.get_rank()}' +
-                       f' len(log_vars): {len(log_vars)}' + ' keys: ' +
-                       ','.join(log_vars.keys()))
-            assert log_var_length == len(log_vars) * dist.get_world_size(), \
-                'loss log variables are different across GPUs!\n' + message
 
         log_vars['loss'] = loss
         for loss_name, loss_value in log_vars.items():
@@ -237,13 +226,13 @@ class BaseDetector(BaseModule, metaclass=ABCMeta):
             dict: It should contain at least 3 keys: ``loss``, ``log_vars``, \
                 ``num_samples``.
 
-                - ``loss`` is a tensor for back propagation, which can be a
-                  weighted sum of multiple losses.
+                - ``loss`` is a tensor for back propagation, which can be a \
+                weighted sum of multiple losses.
                 - ``log_vars`` contains all the variables to be sent to the
-                  logger.
-                - ``num_samples`` indicates the batch size (when the model is
-                  DDP, it means the batch size on each GPU), which is used for
-                  averaging the logs.
+                logger.
+                - ``num_samples`` indicates the batch size (when the model is \
+                DDP, it means the batch size on each GPU), which is used for \
+                averaging the logs.
         """
         losses = self(**data)
         loss, log_vars = self._parse_losses(losses)
@@ -253,7 +242,7 @@ class BaseDetector(BaseModule, metaclass=ABCMeta):
 
         return outputs
 
-    def val_step(self, data, optimizer=None):
+    def val_step(self, data, optimizer):
         """The iteration step during validation.
 
         This method shares the same signature as :func:`train_step`, but used

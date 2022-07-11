@@ -1,5 +1,5 @@
 dataset_type = 'CocoFmtDataset'
-data_root = 'data/tiny_set/'
+data_root = 'tiny/tiny_set/'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 train_pipeline = [
@@ -18,9 +18,7 @@ test_pipeline = [
     dict(
         # type='MultiScaleFlipAug',
         # img_scale=(1333, 800),
-        type='CroppedTilesFlipAug',
-        tile_shape=(640, 512),  # sub image size by cropped
-        tile_overlap=(100, 100),
+        type='MultiScaleFlipAug',
         scale_factor=[1.0],
         flip=False,
         transforms=[
@@ -45,18 +43,21 @@ data = dict(
     ),
     val=dict(
         type=dataset_type,
-        ann_file=data_root + 'mini_annotations/tiny_set_test_all.json',
-        # ann_file=data_root + 'annotations/corner/task/tiny_set_test_sw640_sh512_all.json',
-        # merge_after_infer_kwargs=dict(
-        #     merge_gt_file=data_root + 'mini_annotations/tiny_set_test_all.json',
-        #     merge_nms_th=0.5
-        # ),
+        #ann_file=data_root + 'mini_annotations/tiny_set_test_all.json',
+        ann_file=data_root + 'annotations/corner/task/tiny_set_test_sw640_sh512_all.json',
+        merge_after_infer_kwargs=dict(
+            merge_gt_file=data_root + 'mini_annotations/tiny_set_test_all.json',
+            merge_nms_th=0.5
+        ),
         img_prefix=data_root + 'test/',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
-        # ann_file=data_root + 'annotations/corner/task/tiny_set_test_sw640_sh512_all.json',
-        ann_file=data_root + 'mini_annotations/tiny_set_test_all.json',
+        ann_file=data_root + 'annotations/corner/task/tiny_set_test_sw640_sh512_all.json',
+        merge_after_infer_kwargs=dict(
+            merge_gt_file=data_root + 'mini_annotations/tiny_set_test_all.json',
+            merge_nms_th=0.5
+        ),
         img_prefix=data_root + 'test/',
         pipeline=test_pipeline)
 )

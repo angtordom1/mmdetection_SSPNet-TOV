@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
 from mmcv.cnn import (ConvModule, bias_init_with_prob, constant_init, is_norm,
@@ -88,19 +87,19 @@ class YOLOFHead(AnchorHead):
         self.bbox_subnet = nn.Sequential(*bbox_subnet)
         self.cls_score = nn.Conv2d(
             self.in_channels,
-            self.num_base_priors * self.num_classes,
+            self.num_anchors * self.num_classes,
             kernel_size=3,
             stride=1,
             padding=1)
         self.bbox_pred = nn.Conv2d(
             self.in_channels,
-            self.num_base_priors * 4,
+            self.num_anchors * 4,
             kernel_size=3,
             stride=1,
             padding=1)
         self.object_pred = nn.Conv2d(
             self.in_channels,
-            self.num_base_priors,
+            self.num_anchors,
             kernel_size=3,
             stride=1,
             padding=1)

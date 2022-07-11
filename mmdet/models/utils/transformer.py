@@ -1,16 +1,14 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import math
-import warnings
 from typing import Sequence
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn import (build_activation_layer, build_conv_layer,
-                      build_norm_layer, xavier_init)
+from mmcv.cnn import build_activation_layer, build_conv_layer, build_norm_layer, xavier_init
 from mmcv.cnn.bricks.registry import (TRANSFORMER_LAYER,
                                       TRANSFORMER_LAYER_SEQUENCE)
 from mmcv.cnn.bricks.transformer import (BaseTransformerLayer,
+                                         MultiScaleDeformableAttention,
                                          TransformerLayerSequence,
                                          build_transformer_layer_sequence)
 from mmcv.runner.base_module import BaseModule
@@ -18,16 +16,6 @@ from mmcv.utils import to_2tuple
 from torch.nn.init import normal_
 
 from mmdet.models.utils.builder import TRANSFORMER
-
-try:
-    from mmcv.ops.multi_scale_deform_attn import MultiScaleDeformableAttention
-
-except ImportError:
-    warnings.warn(
-        '`MultiScaleDeformableAttention` in MMCV has been moved to '
-        '`mmcv.ops.multi_scale_deform_attn`, please update your MMCV')
-    from mmcv.cnn.bricks.transformer import MultiScaleDeformableAttention
-
 
 def nlc_to_nchw(x, hw_shape):
     """Convert [N, L, C] shape tensor to [N, C, H, W] shape tensor.
@@ -384,7 +372,6 @@ class PatchMerging(BaseModule):
         x = self.reduction(x)
         return x, output_size
 
-
 def inverse_sigmoid(x, eps=1e-5):
     """Inverse function of sigmoid.
 
@@ -595,12 +582,11 @@ class Transformer(BaseModule):
                       [bs, embed_dims, h, w].
         """
         bs, c, h, w = x.shape
-        # use `view` instead of `flatten` for dynamically exporting to ONNX
-        x = x.view(bs, c, -1).permute(2, 0, 1)  # [bs, c, h, w] -> [h*w, bs, c]
-        pos_embed = pos_embed.view(bs, c, -1).permute(2, 0, 1)
+        x = x.flatten(2).permute(2, 0, 1)  # [bs, c, h, w] -> [h*w, bs, c]
+        pos_embed = pos_embed.flatten(2).permute(2, 0, 1)
         query_embed = query_embed.unsqueeze(1).repeat(
             1, bs, 1)  # [num_query, dim] -> [num_query, bs, dim]
-        mask = mask.view(bs, -1)  # [bs, h, w] -> [bs, h*w]
+        mask = mask.flatten(1)  # [bs, h, w] -> [bs, h*w]
         memory = self.encoder(
             query=x,
             key=None,
@@ -755,7 +741,7 @@ class DeformableDetrTransformer(Transformer):
                 nn.init.xavier_uniform_(p)
         for m in self.modules():
             if isinstance(m, MultiScaleDeformableAttention):
-                m.init_weights()
+                m.init_weight()
         if not self.as_two_stage:
             xavier_init(self.reference_points, distribution='uniform', bias=0.)
         normal_(self.level_embeds)
@@ -1070,8 +1056,6 @@ class DynamicConv(BaseModule):
             by default
         input_feat_shape (int): The shape of input feature.
             Defaults to 7.
-        with_proj (bool): Project two-dimentional feature to
-            one-dimentional feature. Default to True.
         act_cfg (dict): The activation config for DynamicConv.
         norm_cfg (dict): Config dict for normalization layer. Default
             layer normalization.
@@ -1084,7 +1068,6 @@ class DynamicConv(BaseModule):
                  feat_channels=64,
                  out_channels=None,
                  input_feat_shape=7,
-                 with_proj=True,
                  act_cfg=dict(type='ReLU', inplace=True),
                  norm_cfg=dict(type='LN'),
                  init_cfg=None):
@@ -1093,7 +1076,6 @@ class DynamicConv(BaseModule):
         self.feat_channels = feat_channels
         self.out_channels_raw = out_channels
         self.input_feat_shape = input_feat_shape
-        self.with_proj = with_proj
         self.act_cfg = act_cfg
         self.norm_cfg = norm_cfg
         self.out_channels = out_channels if out_channels else in_channels
@@ -1109,9 +1091,8 @@ class DynamicConv(BaseModule):
         self.activation = build_activation_layer(act_cfg)
 
         num_output = self.out_channels * input_feat_shape**2
-        if self.with_proj:
-            self.fc_layer = nn.Linear(num_output, self.out_channels)
-            self.fc_norm = build_norm_layer(norm_cfg, self.out_channels)[1]
+        self.fc_layer = nn.Linear(num_output, self.out_channels)
+        self.fc_norm = build_norm_layer(norm_cfg, self.out_channels)[1]
 
     def forward(self, param_feature, input_feature):
         """Forward function for `DynamicConv`.
@@ -1128,7 +1109,9 @@ class DynamicConv(BaseModule):
             Tensor: The output feature has shape
             (num_all_proposals, out_channels).
         """
-        input_feature = input_feature.flatten(2).permute(2, 0, 1)
+        num_proposals = param_feature.size(0)
+        input_feature = input_feature.view(num_proposals, self.in_channels,
+                                           -1).permute(2, 0, 1)
 
         input_feature = input_feature.permute(1, 0, 2)
         parameters = self.dynamic_layer(param_feature)
@@ -1150,10 +1133,9 @@ class DynamicConv(BaseModule):
         features = self.norm_out(features)
         features = self.activation(features)
 
-        if self.with_proj:
-            features = features.flatten(1)
-            features = self.fc_layer(features)
-            features = self.fc_norm(features)
-            features = self.activation(features)
+        features = features.flatten(1)
+        features = self.fc_layer(features)
+        features = self.fc_norm(features)
+        features = self.activation(features)
 
         return features

@@ -4,7 +4,6 @@ from mmdet.models.builder import build_loss
 from mmdet.core import multi_apply
 import cv2
 
-
 class Heatmap:
     def __init__(self, fpn_lvl=4,
                  loss_att=dict(

@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import random
 import warnings
 
@@ -6,15 +5,15 @@ import numpy as np
 import torch
 import torch.distributed as dist
 from mmcv.parallel import MMDataParallel, MMDistributedDataParallel
-from mmcv.runner import (DistSamplerSeedHook, EpochBasedRunner,
+from mmcv.runner import (HOOKS, DistSamplerSeedHook, EpochBasedRunner,
                          Fp16OptimizerHook, OptimizerHook, build_optimizer,
                          build_runner, get_dist_info)
+from mmcv.utils import build_from_cfg
 
 from mmdet.core import DistEvalHook, EvalHook
 from mmdet.datasets import (build_dataloader, build_dataset,
                             replace_ImageToTensor)
 from mmdet.utils import get_root_logger
-
 
 def init_random_seed(seed=None, device='cuda'):
     """Initialize random seed.
@@ -47,7 +46,6 @@ def init_random_seed(seed=None, device='cuda'):
         random_num = torch.tensor(0, dtype=torch.int32, device=device)
     dist.broadcast(random_num, src=0)
     return random_num.item()
-
 
 def set_random_seed(seed, deterministic=False):
     """Set random seed.
@@ -156,13 +154,9 @@ def train_detector(model,
         optimizer_config = cfg.optimizer_config
 
     # register hooks
-    runner.register_training_hooks(
-        cfg.lr_config,
-        optimizer_config,
-        cfg.checkpoint_config,
-        cfg.log_config,
-        cfg.get('momentum_config', None), None)
-
+    runner.register_training_hooks(cfg.lr_config, optimizer_config,
+                                   cfg.checkpoint_config, cfg.log_config,
+                                   cfg.get('momentum_config', None))
     if distributed:
         if isinstance(runner, EpochBasedRunner):
             runner.register_hook(DistSamplerSeedHook())

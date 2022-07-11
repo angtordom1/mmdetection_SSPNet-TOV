@@ -1,6 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
-import warnings
-
 import mmcv
 import numpy as np
 import torch

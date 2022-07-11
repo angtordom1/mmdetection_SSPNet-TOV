@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from functools import partial
 
 import mmcv
@@ -91,14 +90,7 @@ def build_model_from_cfg(config_path, checkpoint_path, cfg_options=None):
     # build the model
     cfg.model.train_cfg = None
     model = build_detector(cfg.model, test_cfg=cfg.get('test_cfg'))
-    checkpoint = load_checkpoint(model, checkpoint_path, map_location='cpu')
-    if 'CLASSES' in checkpoint.get('meta', {}):
-        model.CLASSES = checkpoint['meta']['CLASSES']
-    else:
-        from mmdet.datasets import DATASETS
-        dataset = DATASETS.get(cfg.data.test['type'])
-        assert (dataset is not None)
-        model.CLASSES = dataset.CLASSES
+    load_checkpoint(model, checkpoint_path, map_location='cpu')
     model.cpu().eval()
     return model
 
@@ -154,10 +146,9 @@ def preprocess_example_input(input_config):
         'ori_shape': (H, W, C),
         'pad_shape': (H, W, C),
         'filename': '<demo>.png',
-        'scale_factor': np.ones(4, dtype=np.float32),
+        'scale_factor': np.ones(4),
         'flip': False,
         'show_img': show_img,
-        'flip_direction': None
     }
 
     return one_img, one_meta
