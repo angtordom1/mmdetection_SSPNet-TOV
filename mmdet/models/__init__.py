@@ -11,7 +11,6 @@ from .necks import *  # noqa: F401,F403
 from .plugins import *  # noqa: F401,F403
 from .roi_heads import *  # noqa: F401,F403
 from .seg_heads import *  # noqa: F401,F403
-from .point import *
 
 __all__ = [
     'BACKBONES', 'NECKS', 'ROI_EXTRACTORS', 'SHARED_HEADS', 'HEADS', 'LOSSES',
