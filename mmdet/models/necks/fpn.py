@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import warnings
 import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import ConvModule
@@ -31,6 +32,10 @@ class FPN(BaseModule):
             - 'on_input': Last feat map of neck inputs (i.e. backbone feature).
             - 'on_lateral':  Last feature map after lateral convs.
             - 'on_output': The last output feature map after fpn convs.
+        extra_convs_on_inputs (bool, deprecated): Whether to apply extra convs
+            on the original feature from the backbone. If True,
+            it is equivalent to `add_extra_convs='on_input'`. If False, it is
+            equivalent to set `add_extra_convs='on_output'`. Default to True.
         relu_before_extra_convs (bool): Whether to apply relu before the extra
             conv. Default: False.
         no_norm_on_lateral (bool): Whether to apply norm on lateral.
@@ -66,6 +71,7 @@ class FPN(BaseModule):
                  start_level=0,
                  end_level=-1,
                  add_extra_convs=False,
+                 extra_convs_on_inputs=True,
                  relu_before_extra_convs=False,
                  no_norm_on_lateral=False,
                  conv_cfg=None,
@@ -87,7 +93,7 @@ class FPN(BaseModule):
 
         if end_level == -1:
             self.backbone_end_level = self.num_ins
-            assert num_outs >= self.num_ins - start_level
+            # assert num_outs >= self.num_ins - start_level   # change by hui
         else:
             # if end_level < inputs, no extra level is allowed
             self.backbone_end_level = end_level
@@ -101,7 +107,15 @@ class FPN(BaseModule):
             # Extra_convs_source choices: 'on_input', 'on_lateral', 'on_output'
             assert add_extra_convs in ('on_input', 'on_lateral', 'on_output')
         elif add_extra_convs:  # True
-            self.add_extra_convs = 'on_input'
+            if extra_convs_on_inputs:
+                # TODO: deprecate `extra_convs_on_inputs`
+                warnings.simplefilter('once')
+                warnings.warn(
+                    '"extra_convs_on_inputs" will be deprecated in v2.9.0,'
+                    'Please use "add_extra_convs"', DeprecationWarning)
+                self.add_extra_convs = 'on_input'
+            else:
+                self.add_extra_convs = 'on_output'
 
         self.lateral_convs = nn.ModuleList()
         self.fpn_convs = nn.ModuleList()
@@ -115,15 +129,18 @@ class FPN(BaseModule):
                 norm_cfg=norm_cfg if not self.no_norm_on_lateral else None,
                 act_cfg=act_cfg,
                 inplace=False)
-            fpn_conv = ConvModule(
-                out_channels,
-                out_channels,
-                3,
-                padding=1,
-                conv_cfg=conv_cfg,
-                norm_cfg=norm_cfg,
-                act_cfg=act_cfg,
-                inplace=False)
+            self.lateral_convs.append(l_conv)
+
+            if i < self.start_level + self.num_outs:  # changed by hui
+                fpn_conv = ConvModule(
+                    out_channels,
+                    out_channels,
+                    3,
+                    padding=1,
+                    conv_cfg=conv_cfg,
+                    norm_cfg=norm_cfg,
+                    act_cfg=act_cfg,
+                    inplace=False)
 
             self.lateral_convs.append(l_conv)
             self.fpn_convs.append(fpn_conv)
@@ -175,7 +192,7 @@ class FPN(BaseModule):
         # build outputs
         # part 1: from original levels
         outs = [
-            self.fpn_convs[i](laterals[i]) for i in range(used_backbone_levels)
+            self.fpn_convs[i](laterals[i]) for i in range(min(used_backbone_levels, self.num_outs))  # change by hui
         ]
         # part 2: add extra levels
         if self.num_outs > len(outs):
