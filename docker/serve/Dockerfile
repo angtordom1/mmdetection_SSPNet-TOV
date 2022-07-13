@@ -1,10 +1,10 @@
-ARG PYTORCH="1.6.0"
-ARG CUDA="10.1"
-ARG CUDNN="7"
+ARG PYTORCH="1.9.0"
+ARG CUDA="11.1"
+ARG CUDNN="8"
 FROM pytorch/pytorch:${PYTORCH}-cuda${CUDA}-cudnn${CUDNN}-devel
 
-ARG MMCV="1.2.7"
-ARG MMDET="2.13.0"
+ARG MMCV="1.4.0"
+ARG MMDET="2.19.0"
 
 ENV PYTHONUNBUFFERED TRUE
 
@@ -26,6 +26,7 @@ RUN pip install torchserve torch-model-archiver
 # MMLAB
 RUN pip install mmcv-full==${MMCV} -f https://download.openmmlab.com/mmcv/dist/cu101/torch1.6.0/index.html
 RUN pip install mmdet==${MMDET}
+RUN pip install install scikit-image
 
 RUN useradd -m model-server \
     && mkdir -p /home/model-server/tmp
