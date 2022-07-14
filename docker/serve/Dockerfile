@@ -15,10 +15,28 @@ RUN apt-get update && \
     openjdk-11-jre-headless \
     # MMDet Requirements
     ffmpeg libsm6 libxext6 git ninja-build libglib2.0-0 libsm6 libxrender-dev libxext6 \
-    && rm -rf /var/lib/apt/lists/*
+    # sf3s Requirements
+    automake autotools-dev git libcurl4-gnutls-dev wget libfuse-dev libssl-dev libxml2-dev make pkg-config
+
+# Clone and run s3fs-fuse
+RUN git clone https://github.com/s3fs-fuse/s3fs-fuse.git /tmp/s3fs-fuse && \
+    cd /tmp/s3fs-fuse && ./autogen.sh && ./configure && make && make install && ldconfig && /usr/local/bin/s3fs --version
+
+# Remove packages
+RUN DEBIAN_FRONTEND=noninteractive apt-get purge -y wget automake autotools-dev g++ git make  && \
+    apt-get -y autoremove --purge && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Set user and group
+ENV USER='model-server'
+ENV GROUP='s3'
+ENV UID='1000'
+ENV GID='1000'
 
 ENV PATH="/opt/conda/bin:$PATH"
 RUN export FORCE_CUDA=1
+
+RUN groupadd -g $GID $GROUP && \
+    useradd -u $UID -g $GROUP -s /bin/sh -m $USER
 
 # TORCHSEVER
 RUN pip install torchserve torch-model-archiver
@@ -27,6 +45,15 @@ RUN pip install torchserve torch-model-archiver
 RUN pip install mmcv-full==${MMCV} -f https://download.openmmlab.com/mmcv/dist/cu101/torch1.6.0/index.html
 RUN pip install mmdet==${MMDET}
 RUN pip install install scikit-image
+
+# Install fuse
+RUN apt-get update   && \
+    apt install fuse && \
+    chown ${USER}.${GROUP} /usr/local/bin/s3fs
+
+# Config fuse
+RUN chmod a+r /etc/fuse.conf && \
+    perl -i -pe 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
 
 RUN useradd -m model-server \
     && mkdir -p /home/model-server/tmp
@@ -39,9 +66,25 @@ RUN chmod +x /usr/local/bin/entrypoint.sh \
 COPY config.properties /home/model-server/config.properties
 RUN mkdir /home/model-server/model-store && chown -R model-server /home/model-server/model-store
 
+# Copy credentials
+ENV SECRET_FILE_PATH=/home/${USER}/passwd-s3fs
+COPY ./passwd-s3fs $SECRET_FILE_PATH
+RUN chmod 600 $SECRET_FILE_PATH && \
+    chown ${USER}.${GROUP} $SECRET_FILE_PATH
+
+# Switch to user
+USER ${UID}:${GID}
+
+
+# Create mnt point
+ENV MNT_POINT_PATH=/home/${USER}
+RUN mkdir -p $MNT_POINT_PATH && \
+    chmod g+w $MNT_POINT_PATH
+
+COPY mount.sh /home/${USER}/mount.sh
+
 EXPOSE 8080 8081 8082
 
-USER model-server
 WORKDIR /home/model-server
 ENV TEMP=/home/model-server/tmp
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
